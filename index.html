@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedTest Pro Ultimate</title>
+    <style>
+        :root {
+            --primary: #00f260;
+            --primary-dim: #0575e6;
+            --bg: #121212;
+            --card-bg: #1e1e2e;
+            --text: #ffffff;
+            --danger: #ff4b4b;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 480px;
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 24px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.6);
+            text-align: center;
+            border: 1px solid rgba(255,255,255,0.08);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* Hiệu ứng nền mờ */
+        .container::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 242, 96, 0.05) 0%, transparent 70%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        h1 {
+            position: relative;
+            margin: 0 0 30px 0;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--primary), #00c6ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            z-index: 1;
+        }
+
+        /* GAUGE SVG */
+        .gauge-svg-container {
+            position: relative;
+            width: 280px;
+            height: 140px;
+            margin: 0 auto 10px;
+            z-index: 1;
+        }
+
+        .gauge-svg {
+            width: 100%;
+            height: 100%;
+            transform: rotateX(180deg);
+        }
+
+        .gauge-bg-arc {
+            fill: none;
+            stroke: #2a2a35;
+            stroke-width: 12;
+            stroke-linecap: round;
+        }
+
+        .gauge-val-arc {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            stroke-dasharray: 0, 439.8; /* Chu vi bán nguyệt */
+            transition: stroke-dasharray 0.3s ease, stroke 0.3s ease;
+            filter: drop-shadow(0 0 5px currentColor);
+        }
+
+        .gauge-center {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            z-index: 3;
+        }
+
+        .speed-number {
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            text-shadow: 0 0 20px rgba(255,255,255,0.1);
+        }
+
+        .speed-unit {
+            font-size: 1rem;
+            color: #888;
+            font-weight: 500;
+            margin-top: 5px;
+        }
+
+        /* TRẠNG THÁI MẠNG (NEW) */
+        .network-grade {
+            margin-bottom: 30px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            height: 30px; /* Cố định chiều cao để không bị nhảy layout */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-shadow: 0 0 10px currentColor;
+            z-index: 1;
+            position: relative;
+        }
+
+        /* BUTTON */
+        .btn {
+            position: relative;
+            background: linear-gradient(90deg, var(--primary-dim), var(--primary));
+            border: none;
+            color: #000;
+            padding: 16px 60px;
+            font-size: 1.1rem;
+            font-weight: 800;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            outline: none;
+            min-width: 200px;
+            z-index: 1;
+            box-shadow: 0 5px 15px rgba(0, 242, 96, 0.3);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px) scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 242, 96, 0.5);
+        }
+
+        .btn.stop {
+            background: linear-gradient(90deg, #ff4b4b, #ff0055);
+            color: white;
+            box-shadow: 0 5px 15px rgba(255, 75, 75, 0.3);
+        }
+        
+        .btn.stop:hover {
+            box-shadow: 0 10px 25px rgba(255, 75, 75, 0.5);
+        }
+
+        /* INFO BOX */
+        .info-box {
+            margin-top: 30px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: left;
+            font-size: 0.95rem;
+            border: 1px solid rgba(255,255,255,0.05);
+            z-index: 1;
+            position: relative;
+        }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+
+        .info-row:last-child {
+            border-bottom: none;
+        }
+
+        .info-label { color: #888; font-weight: 500; }
+        .info-val { font-weight: bold; color: var(--primary); text-align: right;}
+
+        .status-text {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 15px;
+            min-height: 20px;
+            z-index: 1;
+            position: relative;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>SpeedTest Pro</h1>
+
+        <div class="gauge-svg-container">
+            <svg class="gauge-svg" viewBox="0 0 300 150">
+                <path class="gauge-bg-arc" d="M 10 150 A 140 140 0 0 1 290 150" />
+                <path id="gaugeValArc" class="gauge-val-arc" d="M 10 150 A 140 140 0 0 1 290 150" />
+            </svg>
+            <div class="gauge-center">
+                <div class="speed-number" id="speedNum">0.0</div>
+                <div class="speed-unit">Mbps</div>
+            </div>
+        </div>
+
+        <div class="network-grade" id="netGrade" style="color: #666;">
+            Sẵn sàng
+        </div>
+
+        <button class="btn" id="toggleBtn" onclick="toggleSpeedTest()">BẮT ĐẦU ĐO</button>
+        <div class="status-text" id="statusText">Bấm nút để bắt đầu đo liên tục</div>
+
+        <div class="info-box">
+            <div class="info-row">
+                <span class="info-label">IP Address</span>
+                <span class="info-val" id="ipVal">Đang tải...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Nhà mạng</span>
+                <span class="info-val" id="ispVal">...</span>
+            </div>
+            <div class="info-row">
+                <span class="info-label">Khu vực</span>
+                <span class="info-val" id="locVal">...</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- 1. Lấy thông tin IP (Backup 2 nguồn) ---
+        async function fetchInfo() {
+            try {
+                // Ưu tiên ipapi.co
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) throw new Error("API Limit");
+                const data = await response.json();
+                
+                updateInfoUI(data.ip, data.org || data.asn, `${data.city}, ${data.country_name}`);
+            } catch (e) {
+                // Dự phòng ipwho.is
+                try {
+                    const res2 = await fetch('https://ipwho.is/');
+                    const data2 = await res2.json();
+                    updateInfoUI(data2.ip, data2.connection.isp, `${data2.city}, ${data2.country}`);
+                } catch (err) {
+                    updateInfoUI("N/A", "Không xác định", "Không xác định");
+                }
+            }
+        }
+
+        function updateInfoUI(ip, isp, loc) {
+            document.getElementById('ipVal').innerText = ip;
+            document.getElementById('ispVal').innerText = isp;
+            document.getElementById('locVal').innerText = loc;
+        }
+
+        fetchInfo();
+
+        // --- 2. Cấu hình & Biến toàn cục ---
+        let isTesting = false;
+        let testController = null;
+        let speedHistory = []; 
+        const HISTORY_SIZE = 4; // Độ trễ trung bình (số mẫu)
+        const MAX_GAUGE_SPEED = 300; // Tốc độ tối đa hiển thị (kim full)
+        const GAUGE_ARC_LENGTH = 439.8; 
+
+        // Các Element
+        const toggleBtn = document.getElementById('toggleBtn');
+        const statusText = document.getElementById('statusText');
+        const gaugeValArc = document.getElementById('gaugeValArc');
+        const speedNum = document.getElementById('speedNum');
+        const netGrade = document.getElementById('netGrade');
+
+        // --- 3. Hàm Xử Lý Giao Diện ---
+        
+        // Hàm đánh giá chất lượng mạng
+        function getNetworkGrade(mbps) {
+            if (mbps <= 0) return { text: "ĐANG KẾT NỐI...", color: "#666" };
+            if (mbps < 10) return { text: "RẤT CHẬM 🐢", color: "#ff4b4b" }; // Đỏ
+            if (mbps < 30) return { text: "TRUNG BÌNH 🐌", color: "#ffa502" }; // Cam
+            if (mbps < 70) return { text: "ỔN ĐỊNH 👌", color: "#eccc68" }; // Vàng
+            if (mbps < 150) return { text: "NHANH 🚀", color: "#7bed9f" }; // Xanh lá nhạt
+            if (mbps < 300) return { text: "RẤT NHANH ⚡", color: "#00f260" }; // Xanh neon
+            return { text: "SIÊU TỐC ĐỘ 🔥", color: "#d900ff" }; // Tím
+        }
+
+        function updateGaugeAndGrade(speedMbps) {
+            // Update số
+            speedNum.innerText = speedMbps.toFixed(1);
+
+            // Update kim đồng hồ
+            let percent = speedMbps / MAX_GAUGE_SPEED;
+            if (percent > 1) percent = 1;
+            const dashArrayValue = percent * GAUGE_ARC_LENGTH;
+            gaugeValArc.style.strokeDasharray = `${dashArrayValue}, ${GAUGE_ARC_LENGTH}`;
+            
+            // Update Text đánh giá + Màu sắc
+            const grade = getNetworkGrade(speedMbps);
+            netGrade.innerText = grade.text;
+            netGrade.style.color = grade.color;
+            gaugeValArc.style.stroke = grade.color; // Kim đồng hồ đổi màu theo trạng thái
+        }
+
+        // --- 4. Logic Đo Tốc Độ ---
+
+        function toggleSpeedTest() {
+            if (isTesting) {
+                stopTest();
+            } else {
+                startTest();
+            }
+        }
+
+        function startTest() {
+            isTesting = true;
+            toggleBtn.innerText = "DỪNG LẠI";
+            toggleBtn.classList.add('stop');
+            statusText.innerText = "Đang tải dữ liệu liên tục...";
+            speedHistory = [];
+            testController = new AbortController();
+            
+            // Reset giao diện
+            netGrade.innerText = "ĐANG KHỞI ĐỘNG...";
+            netGrade.style.color = "#ccc";
+            
+            continuousLoop(testController.signal);
+        }
+
+        function stopTest() {
+            isTesting = false;
+            if (testController) testController.abort();
+            
+            toggleBtn.innerText = "ĐO LẠI";
+            toggleBtn.classList.remove('stop');
+            statusText.innerText = "Đã dừng đo.";
+            // Giữ nguyên kết quả cuối cùng trên màn hình
+        }
+
+        async function continuousLoop(signal) {
+            // Vòng lặp vô tận cho đến khi bấm Stop
+            while (isTesting) {
+                try {
+                    // Dùng file lớn hơn (50MB) để luồng dữ liệu ổn định hơn
+                    const fileUrl = "https://speed.cloudflare.com/__down?bytes=50000000" + "&t=" + Date.now();
+                    const startTime = Date.now();
+                    let loadedBytes = 0;
+                    let lastUpdate = startTime;
+
+                    const response = await fetch(fileUrl, { signal });
+                    const reader = response.body.getReader();
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+                        
+                        loadedBytes += value.length;
+                        const now = Date.now();
+
+                        // Cập nhật mỗi 150ms (tránh giật lag UI)
+                        if (now - lastUpdate > 150) {
+                            const durationSeconds = (now - startTime) / 1000;
+                            // Tính toán tốc độ
+                            // (Bytes * 8) / seconds / 1024 / 1024 = Mbps
+                            const currentSpeed = (loadedBytes * 8) / durationSeconds / 1024 / 1024;
+                            
+                            // Làm mượt số liệu bằng trung bình cộng (Rolling Average)
+                            speedHistory.push(currentSpeed);
+                            if (speedHistory.length > HISTORY_SIZE) speedHistory.shift();
+                            
+                            const avgSpeed = speedHistory.reduce((a, b) => a + b, 0) / speedHistory.length;
+                            
+                            updateGaugeAndGrade(avgSpeed);
+                            lastUpdate = now;
+                        }
+                    }
+
+                } catch (err) {
+                    if (err.name === 'AbortError') {
+                        console.log("User stopped.");
+                    } else {
+                        console.error(err);
+                        // Nếu lỗi mạng, thử lại sau 1s
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
+                }
+            }
+        }
+    </script>
+</body>
+</html>
